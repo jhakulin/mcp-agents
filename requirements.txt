@@ -1,0 +1,17 @@
+# Core dependencies
+youtube-transcript-api
+openai
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+
+# MCP server
+mcp
+
+# Utilities
+python-dotenv
+aiofiles
+requests
+
+# Async support
+aiohttp
