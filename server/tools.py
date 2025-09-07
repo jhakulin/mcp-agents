@@ -4,6 +4,8 @@ import os
 import logging
 from typing import Dict, Any, List, Optional
 
+from openai import OpenAI
+
 # Import agents from parent directory
 import sys
 from pathlib import Path
@@ -46,7 +48,8 @@ def get_text_summarizer_agent() -> TextSummarizerAgent:
         openai_api_key = os.environ.get("OPENAI_API_KEY")
         if not openai_api_key:
             raise RuntimeError("OPENAI_API_KEY environment variable is required")
-        _agents["text_summarizer"] = TextSummarizerAgent(openai_api_key=openai_api_key)
+        openai_client = OpenAI(api_key=openai_api_key)
+        _agents["text_summarizer"] = TextSummarizerAgent(client=openai_client)
     return _agents["text_summarizer"]
 
 

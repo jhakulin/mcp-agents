@@ -1,8 +1,3 @@
-# ------------------------------------
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-# ------------------------------------
-
 import logging
 from typing import Any, Dict, Optional
 
@@ -15,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class TextSummarizerAgent(BaseAgent):
     """Agent that summarizes text using OpenAI models."""
-    
+
     def __init__(
         self,
         client: OpenAI,
@@ -30,14 +25,15 @@ class TextSummarizerAgent(BaseAgent):
         self.model = model
         self.instructions = instructions or self._get_default_instructions()
         self._logger = logger
-    
+
     def process(self, input_data: Dict[str, Any]) -> AgentResponse:
         """
         Process text to create a summary article.
-        
+
         Args:
-            input_data: Dict with 'text' key containing text to summarize
-            
+            input_data: Dict with 'text' key containing text to summarize,
+                        optional 'max_length' and 'style' keys
+
         Returns:
             AgentResponse with article or error
         """
@@ -48,37 +44,42 @@ class TextSummarizerAgent(BaseAgent):
                 error="Text is required in input data",
                 error_type="validation_error"
             )
-        
+
         if not isinstance(input_data["text"], str) or not input_data["text"].strip():
             return AgentResponse(
                 status=AgentResponseStatus.FAILED,
                 error="Text must be a non-empty string",
                 error_type="validation_error"
             )
-        
+
         text = input_data["text"]
-        
+        max_length = input_data.get("max_length", 1000)
+        style = input_data.get("style", "neutral")
+
+        # Use configurable instructions
+        instructions = self._get_default_instructions(max_length=max_length, style=style)
+
         # Generate article
-        article = self._generate_article(text)
+        article = self._generate_article(text, instructions)
         if not article:
             return AgentResponse(
                 status=AgentResponseStatus.FAILED,
                 error="Model failed to generate article",
                 error_type="generation_error"
             )
-        
+
         return AgentResponse(
             status=AgentResponseStatus.SUCCESS,
             data={"article": article}
         )
-    
-    def _generate_article(self, text: str) -> Optional[str]:
+
+    def _generate_article(self, text: str, instructions: str) -> Optional[str]:
         """Generate article using the LLM."""
         messages = [
-            {"role": "system", "content": self.instructions},
+            {"role": "system", "content": instructions},
             {"role": "user", "content": text},
         ]
-        
+
         try:
             resp = self.client.responses.create(model=self.model, input=messages)
             article_text = resp.output_text
@@ -86,11 +87,11 @@ class TextSummarizerAgent(BaseAgent):
         except Exception:
             self._logger.exception("Model call failed")
             return None
-    
+
     @staticmethod
-    def _get_default_instructions() -> str:
-        """Return default summarization instructions."""
-        return """
+    def _get_default_instructions(max_length: int = 1000, style: str = "neutral") -> str:
+        """Return summarization instructions, configurable for max_length and style."""
+        base_instructions = """
 You are expert in summarizing text and providing highly readable and informative summary article for users.
 Treat the audience of the article as person who is not familiar of the concepts and who wants to learn them.
 
@@ -131,3 +132,10 @@ for the person who is not expert in the field.
 
 5. Top actions (H2): summarize 3-5 immediate, actionable steps.
 """
+        # Add configurable instructions for max_length and style
+        configurable_instructions = (
+            f"\n\n# Additional constraints\n"
+            f"Maximum length: {max_length} words.\n"
+            f"Style: {style}."
+        )
+        return base_instructions + configurable_instructions

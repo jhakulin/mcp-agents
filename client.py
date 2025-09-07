@@ -49,7 +49,23 @@ async def test_youtube_tools():
             print(f"Status: {health_data['status']}")
             print(f"API Keys configured: {health_data['apis_configured']}\n")
             
-            # Rest of the test code remains the same...
+            # 3. Fetch video transcript
+            transcript_url = "https://www.youtube.com/watch?v=<VIDEO_ID>"
+            print(f"📜 Fetching transcript for video: {transcript_url}")
+            transcript = await session.call_tool(
+                "youtube_transcribe",
+                arguments={"url": transcript_url}
+            )
+            transcript_text = json.loads(transcript.content[0].text)
+
+            # 4. Summarize the transcript
+            print("📝 Summarizing transcript...")
+            summary = await session.call_tool(
+                "summarize_text",
+                arguments={"text": transcript_text["transcript"], "max_length": 500, "style": "hilarious"}
+            )
+            summary_text = json.loads(summary.content[0].text)
+            print(f"Summary: {summary_text["summary"]}\n")
 
 
 async def main():

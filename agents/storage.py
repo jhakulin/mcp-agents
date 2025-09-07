@@ -1,8 +1,3 @@
-# ------------------------------------
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT License.
-# ------------------------------------
-
 import json
 import logging
 from abc import ABC, abstractmethod
